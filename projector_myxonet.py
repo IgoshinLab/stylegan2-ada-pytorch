@@ -61,19 +61,13 @@ def project(
     noise_bufs = { name: buf for (name, buf) in G.synthesis.named_buffers() if 'noise_const' in name }
 
     # Load VGG16 feature detector.
-    url = 'https://nvlabs-fi-cdn.nvidia.com/stylegan2-ada-pytorch/pretrained/metrics/vgg16.pt'
-    with dnnlib.util.open_url(url) as f:
-        vgg16 = torch.jit.load(f).eval().to(device)
+    vgg16 = torch.jit.load("models/scriptmodule.pt").eval().to(device)
 
     # Features for target image.
     target_images = target.unsqueeze(0).to(device).to(torch.float32)
     if target_images.shape[2] > 256:
         target_images = F.interpolate(target_images, size=(256, 256), mode='area')
-    if target_images.size(dim=1) == 1:
-        target_features = vgg16(target_images.repeat(1, 3, 1, 1), resize_images=False, return_lpips=True)
-    else:
-        target_features = vgg16(target_images, resize_images=False, return_lpips=True)
-
+    target_features = vgg16(target_images).detach()
     np.savez(f'{outdir}/VGG16_real.npz', w=target_features.unsqueeze(0).cpu().numpy())
 
     w_opt = torch.tensor(w_avg, dtype=torch.float32, device=device, requires_grad=True) # pylint: disable=not-callable
@@ -107,11 +101,8 @@ def project(
             synth_images = F.interpolate(synth_images, size=(256, 256), mode='area')
 
         # Features for synth images.
-        if synth_images.size(dim=1) == 1:
-            synth_features = vgg16(synth_images.repeat(1, 3, 1, 1), resize_images=False, return_lpips=True)
-        else:
-            synth_features = vgg16(synth_images, resize_images=False, return_lpips=True)
-        dist = (target_features - synth_features).square().sum()
+        synth_features = vgg16(synth_images).detach()
+        dist = (target_features - synth_features).square().sum() * 100000
         #dist = (target_features - synth_features).abs()
         # TODO: Change the loss function
         # Noise regularization.
@@ -147,11 +138,11 @@ def project(
 
 @click.command()
 @click.option('--network', 'network_pkl', default="/mnt/data/feature_extraction/featmodels/stylegan3/training-runs/00017-stylegan2-myxo1-256x256-gpus1-batch16-gamma10/network-snapshot-001000.pkl", help='Network pickle filename', required=True)
-@click.option('--target', 'target_fname', default="/mnt/data/feature_extraction/myxo/data/Sorted_all/images_clahe_crop/Branching||AG1111_081317_534.tif", help='Target image file to project to', required=True, metavar='FILE')
+@click.option('--target', 'target_fname', default="/mnt/data/feature_extraction/data/Sorted_all/images_clahe_crop/Branching||AG1111_081317_534.tif", help='Target image file to project to', required=True, metavar='FILE')
 @click.option('--num-steps',              help='Number of optimization steps', type=int, default=1000, show_default=True)
 @click.option('--seed',                   help='Random seed', type=int, default=303, show_default=True)
 @click.option('--save-video',             help='Save an mp4 video of optimization progress', type=bool, default=False, show_default=True)
-@click.option('--outdir',                 default="/mnt/data/feature_extraction/myxo/data/Sorted_all/images_clahe_crop_feats/Branching||AG1111_081317_534", help='Where to save the output images', required=True, metavar='DIR')
+@click.option('--outdir',                 default="/mnt/data/feature_extraction/data/Sorted_all/images_clahe_crop_resnet_feats/Branching||AG1111_081317_534", help='Where to save the output images', required=True, metavar='DIR')
 def run_projection(
     network_pkl: str,
     target_fname: str,
