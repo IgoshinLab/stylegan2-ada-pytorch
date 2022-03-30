@@ -74,7 +74,7 @@ def project(
     else:
         target_features = vgg16(target_images, resize_images=False, return_lpips=True)
 
-    np.savez(f'{outdir}/VGG16_real.npz', w=target_features.unsqueeze(0).cpu().numpy())
+    np.savez(f'{outdir}/projected_rv.npz', w=target_features.unsqueeze(0).cpu().numpy())
 
     w_opt = torch.tensor(w_avg, dtype=torch.float32, device=device, requires_grad=True) # pylint: disable=not-callable
     w_out = torch.zeros([num_steps] + list(w_opt.shape[1:]), dtype=torch.float32, device=device)
@@ -111,6 +111,7 @@ def project(
             synth_features = vgg16(synth_images.repeat(1, 3, 1, 1), resize_images=False, return_lpips=True)
         else:
             synth_features = vgg16(synth_images, resize_images=False, return_lpips=True)
+
         dist = (target_features - synth_features).square().sum()
         #dist = (target_features - synth_features).abs()
         # TODO: Change the loss function
@@ -140,18 +141,18 @@ def project(
             for buf in noise_bufs.values():
                 buf -= buf.mean()
                 buf *= buf.square().mean().rsqrt()
-
+    np.savez(f'{outdir}/projected_sv.npz', w=synth_features.detach().cpu().numpy())
     return w_out.repeat([1, G.mapping.num_ws, 1])
 
 #----------------------------------------------------------------------------
 
 @click.command()
 @click.option('--network', 'network_pkl', default="/mnt/data/feature_extraction/featmodels/stylegan3/training-runs/00017-stylegan2-myxo1-256x256-gpus1-batch16-gamma10/network-snapshot-001000.pkl", help='Network pickle filename', required=True)
-@click.option('--target', 'target_fname', default="/mnt/data/feature_extraction/myxo/data/Sorted_all/images_clahe_crop/Branching||AG1111_081317_534.tif", help='Target image file to project to', required=True, metavar='FILE')
+@click.option('--target', 'target_fname', default="/mnt/data/feature_extraction/data/Sorted_all/images_clahe_crop/Branching||AG1111_081317_534.tif", help='Target image file to project to', required=True, metavar='FILE')
 @click.option('--num-steps',              help='Number of optimization steps', type=int, default=1000, show_default=True)
 @click.option('--seed',                   help='Random seed', type=int, default=303, show_default=True)
 @click.option('--save-video',             help='Save an mp4 video of optimization progress', type=bool, default=False, show_default=True)
-@click.option('--outdir',                 default="/mnt/data/feature_extraction/myxo/data/Sorted_all/images_clahe_crop_feats/Branching||AG1111_081317_534", help='Where to save the output images', required=True, metavar='DIR')
+@click.option('--outdir',                 default="/mnt/data/feature_extraction/data/Sorted_all/images_clahe_crop_feats/Branching||AG1111_081317_534_1", help='Where to save the output images', required=True, metavar='DIR')
 def run_projection(
     network_pkl: str,
     target_fname: str,

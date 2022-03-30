@@ -68,7 +68,7 @@ def project(
     if target_images.shape[2] > 256:
         target_images = F.interpolate(target_images, size=(256, 256), mode='area')
     target_features = vgg16(target_images).detach()
-    np.savez(f'{outdir}/VGG16_real.npz', w=target_features.unsqueeze(0).cpu().numpy())
+    np.savez(f'{outdir}/projected_rv.npz', w=target_features.unsqueeze(0).cpu().numpy())
 
     w_opt = torch.tensor(w_avg, dtype=torch.float32, device=device, requires_grad=True) # pylint: disable=not-callable
     w_out = torch.zeros([num_steps] + list(w_opt.shape[1:]), dtype=torch.float32, device=device)
@@ -101,9 +101,9 @@ def project(
             synth_images = F.interpolate(synth_images, size=(256, 256), mode='area')
 
         # Features for synth images.
-        synth_features = vgg16(synth_images).detach()
+        synth_features = vgg16(synth_images)
         dist = (target_features - synth_features).square().sum() * 100000
-        #dist = (target_features - synth_features).abs()
+        #dist = (target_features - synth_features).abs().sum()
         # TODO: Change the loss function
         # Noise regularization.
         reg_loss = 0.0
@@ -132,6 +132,7 @@ def project(
                 buf -= buf.mean()
                 buf *= buf.square().mean().rsqrt()
 
+    np.savez(f'{outdir}/projected_sv.npz', w=synth_features.detach().cpu().numpy())
     return w_out.repeat([1, G.mapping.num_ws, 1])
 
 #----------------------------------------------------------------------------
