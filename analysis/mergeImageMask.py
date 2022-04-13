@@ -37,6 +37,6 @@ def merge_img_mask2(img_dir, mask_dir, out_dir):
             tifffile.imwrite(os.path.join(out_dir, img_file), img)
 
 
-merge_img_mask2("/mnt/data/feature_extraction/data/triplet_all",
-               None,
-               "/mnt/data/feature_extraction/data/triplet_all_clahe")
+merge_img_mask2("/mnt/data/feature_extraction/data/Hist_match/original_all",
+                None,
+                "/mnt/data/feature_extraction/data/Hist_match/clahe")

@@ -20,5 +20,5 @@ def crop_resize(img_dir, out_dir, x, y, resize=1/4):
         tifffile.imwrite(os.path.join(out_dir, img_file), img)
 
 
-crop_resize("/mnt/data/feature_extraction/movie/selected_frames/images_clahe",
-            "/mnt/data/feature_extraction/movie/selected_frames/images_clahe_crop", 256, 256, resize=1/4)
+crop_resize("/mnt/data/feature_extraction/data/Hist_match/inputs_collect_all",
+            "/mnt/data/feature_extraction/data/Hist_match/hm_crop", 224, 224, resize=1/4)
