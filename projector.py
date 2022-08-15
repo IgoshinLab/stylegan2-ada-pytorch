@@ -125,6 +125,8 @@ def project(
                 if noise.shape[2] <= 8:
                     break
                 noise = F.avg_pool2d(noise, kernel_size=2)
+
+        # print("dist=%f, reg_loss=%f" % (dist, reg_loss))
         loss = dist + reg_loss * regularize_noise_weight
 
         # Step
@@ -147,12 +149,12 @@ def project(
 #----------------------------------------------------------------------------
 
 @click.command()
-@click.option('--network', 'network_pkl', default="/mnt/data/feature_extraction/featmodels/stylegan3/training-runs/00017-stylegan2-myxo1-256x256-gpus1-batch16-gamma10/network-snapshot-001000.pkl", help='Network pickle filename', required=True)
-@click.option('--target', 'target_fname', default="/mnt/data/feature_extraction/data/Sorted_all/images_clahe_crop/Branching||AG1111_081317_534.tif", help='Target image file to project to', required=True, metavar='FILE')
+@click.option('--network', 'network_pkl', default="/home/xavier/Documents/project/stylegan3/training-runs/00004-stylegan2-myxo-selected-gpus1-batch32-gamma10-selecteddata/network-snapshot-001600.pkl", help='Network pickle filename', required=True)
+@click.option('--target', 'target_fname', default="/media/xavier/Storage/feature_extraction/data/SortedSelect4sim_all_crop/Small_fb_higher_density||LS3015_122910_316.tif", help='Target image file to project to', required=True, metavar='FILE')
 @click.option('--num-steps',              help='Number of optimization steps', type=int, default=1000, show_default=True)
 @click.option('--seed',                   help='Random seed', type=int, default=303, show_default=True)
-@click.option('--save-video',             help='Save an mp4 video of optimization progress', type=bool, default=False, show_default=True)
-@click.option('--outdir',                 default="/mnt/data/feature_extraction/data/Sorted_all/images_clahe_crop_feats/Branching||AG1111_081317_534_1", help='Where to save the output images', required=True, metavar='DIR')
+@click.option('--save-video',             help='Save an mp4 video of optimization progress', type=bool, default=True, show_default=True)
+@click.option('--outdir',                 default="/home/xavier/Documents/project/stylegan3/training-runs/00004-stylegan2-myxo-selected-gpus1-batch32-gamma10-selecteddata/bptemp2", help='Where to save the output images', required=True, metavar='DIR')
 def run_projection(
     network_pkl: str,
     target_fname: str,
@@ -188,6 +190,7 @@ python projector.py --outdir=out --network=/mnt/data/feature_extraction/featmode
     target_pil = target_pil.crop(((w - s) // 2, (h - s) // 2, (w + s) // 2, (h + s) // 2))
     target_pil = target_pil.resize((G.img_resolution, G.img_resolution), PIL.Image.LANCZOS)
     target_uint8 = np.array(target_pil, dtype=np.uint8)
+    target_uint8 = cv2.cvtColor(target_uint8, cv2.COLOR_GRAY2BGR)
     if target_uint8.ndim == 2:
         target_uint8 = target_uint8[:, :, np.newaxis]
 
