@@ -190,7 +190,8 @@ python projector.py --outdir=out --network=/mnt/data/feature_extraction/featmode
     target_pil = target_pil.crop(((w - s) // 2, (h - s) // 2, (w + s) // 2, (h + s) // 2))
     target_pil = target_pil.resize((G.img_resolution, G.img_resolution), PIL.Image.LANCZOS)
     target_uint8 = np.array(target_pil, dtype=np.uint8)
-    target_uint8 = cv2.cvtColor(target_uint8, cv2.COLOR_GRAY2BGR)
+    if G.img_channels == 3:
+        target_uint8 = cv2.cvtColor(target_uint8, cv2.COLOR_GRAY2BGR)
     if target_uint8.ndim == 2:
         target_uint8 = target_uint8[:, :, np.newaxis]
 
